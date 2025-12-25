@@ -18,19 +18,36 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div
-        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+      <div className={`flex items-end space-x-2 max-w-[85%] lg:max-w-[70%] ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+        {/* Avatar */}
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
           isUser
-            ? 'bg-blue-600 text-white'
-            : 'bg-white text-gray-800 shadow'
-        }`}
-      >
-        <p className="text-sm whitespace-pre-wrap">{content}</p>
-        <p className={`text-xs mt-1 ${isUser ? 'text-blue-100' : 'text-gray-500'}`}>
-          {new Date(message.timestamp).toLocaleTimeString()}
-        </p>
+            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white'
+            : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
+        }`}>
+          {isUser ? 'U' : 'AI'}
+        </div>
+
+        {/* Message Bubble */}
+        <div
+          className={`px-4 py-3 rounded-2xl ${
+            isUser
+              ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-br-md'
+              : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-md'
+          }`}
+        >
+          <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
+            isUser ? 'text-white' : 'text-gray-800'
+          }`}>
+            {content}
+          </p>
+          <p className={`text-xs mt-2 ${
+            isUser ? 'text-blue-100' : 'text-gray-400'
+          }`}>
+            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
       </div>
     </div>
   )
 }
-
