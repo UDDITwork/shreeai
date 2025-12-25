@@ -6,14 +6,16 @@ dotenv.config();
 const FIRECRAWLER_API_URL = 'https://api.firecrawl.dev/v1';
 
 export async function searchWeb(query) {
+  console.log('🔍 FIRECRAWLER: Searching for:', query);
   try {
     const response = await axios.post(
       `${FIRECRAWLER_API_URL}/search`,
       {
         query,
-        pageOptions: {
-          onlyMainContent: true,
-        },
+        limit: 5,
+        scrapeOptions: {
+          onlyMainContent: true
+        }
       },
       {
         headers: {
@@ -23,12 +25,13 @@ export async function searchWeb(query) {
       }
     );
 
+    console.log('✅ FIRECRAWLER: Found', response.data.data?.length || 0, 'results');
     return {
       success: true,
       results: response.data.data || [],
     };
   } catch (error) {
-    console.error('Firecrawler API error:', error.response?.data || error.message);
+    console.error('❌ FIRECRAWLER API error:', error.response?.data || error.message);
     return {
       success: false,
       error: error.response?.data?.error || error.message,
@@ -38,14 +41,13 @@ export async function searchWeb(query) {
 }
 
 export async function scrapeUrl(url) {
+  console.log('🔍 FIRECRAWLER: Scraping URL:', url);
   try {
     const response = await axios.post(
       `${FIRECRAWLER_API_URL}/scrape`,
       {
         url,
-        pageOptions: {
-          onlyMainContent: true,
-        },
+        formats: ['markdown', 'html']
       },
       {
         headers: {
@@ -55,12 +57,13 @@ export async function scrapeUrl(url) {
       }
     );
 
+    console.log('✅ FIRECRAWLER: Scraped successfully');
     return {
       success: true,
       data: response.data.data,
     };
   } catch (error) {
-    console.error('Firecrawler scrape error:', error.response?.data || error.message);
+    console.error('❌ FIRECRAWLER scrape error:', error.response?.data || error.message);
     return {
       success: false,
       error: error.response?.data?.error || error.message,

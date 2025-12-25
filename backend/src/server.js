@@ -10,8 +10,13 @@ import remindersRoutes from './routes/reminders.js';
 import uploadsRoutes from './routes/uploads.js';
 import searchRoutes from './routes/search.js';
 import emailsRoutes from './routes/emails.js';
+import summaryRoutes from './routes/summary.js';
+import linkedinRoutes from './routes/linkedin.js';
+import sheetsRoutes from './routes/sheets.js';
+import googleAuthRoutes from './routes/google-auth.js';
 import { initializeDatabase } from './models/database.js';
 import { setupReminderScheduler } from './services/reminder.js';
+import { initializeSummaryScheduler } from './services/summary-generator.js';
 
 dotenv.config();
 
@@ -43,6 +48,10 @@ app.use('/api/reminders', remindersRoutes);
 app.use('/api/uploads', uploadsRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/emails', emailsRoutes);
+app.use('/api/summary', summaryRoutes);
+app.use('/api/linkedin', linkedinRoutes);
+app.use('/api/sheets', sheetsRoutes);
+app.use('/api/google', googleAuthRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -67,6 +76,10 @@ async function startServer() {
     // Setup reminder scheduler
     setupReminderScheduler(io);
     console.log('Reminder scheduler initialized');
+
+    // Setup 12-hour summary scheduler
+    initializeSummaryScheduler(io);
+    console.log('Summary scheduler initialized');
     
     const PORT = process.env.PORT || 3001;
     httpServer.listen(PORT, () => {

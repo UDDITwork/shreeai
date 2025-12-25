@@ -2,9 +2,7 @@ import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { client } from '../models/database.js';
 import { executeAgentTask } from '../services/agent.js';
-import { detectIntent } from '../utils/ai-detector.js';
-import { searchSimilarConversations } from '../services/vector-store.js';
-import { storeConversationEmbedding } from '../services/vector-store.js';
+import { searchSimilarConversations, storeConversationEmbedding } from '../services/vector-store.js';
 import { randomUUID as uuidv4 } from 'crypto';
 
 const router = express.Router();
@@ -32,18 +30,12 @@ router.post('/', authenticateToken, async (req, res) => {
       .filter(Boolean)
       .join('\n');
 
-    // Detect intent
-    const intent = await detectIntent(message, context);
+    // Always use the agent for processing - it handles all intents intelligently
+    const agentResult = await executeAgentTask(userId, message, context);
+    let response = agentResult.result || 'I\'ve processed your request.';
 
-    // Execute agent task for complex multi-step requests
-    let response = '';
-    if (intent.intent === 'search' || intent.intent === 'save' || intent.intent === 'remind') {
-      const agentResult = await executeAgentTask(userId, message, context);
-      response = agentResult.result || 'I\'ve processed your request.';
-    } else {
-      // Simple response for other intents
-      response = 'I understand. How can I help you further?';
-    }
+    // Get intent for logging purposes
+    const intent = { intent: agentResult.toolResults?.length > 0 ? agentResult.toolResults[0].tool : 'chat' };
 
     // Store assistant response
     const responseId = uuidv4();

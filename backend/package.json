@@ -4,38 +4,46 @@
   "description": "Backend for Smart Idea Manager with AI orchestration",
   "main": "src/server.js",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js"
   },
-  "keywords": ["ai", "agent", "langchain", "pinecone"],
+  "keywords": [
+    "ai",
+    "agent",
+    "langchain",
+    "pinecone"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
+    "@anthropic-ai/sdk": "^0.20.0",
+    "@langchain/anthropic": "^0.1.0",
+    "@langchain/community": "^0.0.20",
+    "@langchain/core": "^0.1.0",
+    "@langchain/openai": "^0.0.14",
+    "@libsql/client": "^0.4.0",
+    "@pinecone-database/pinecone": "^2.0.0",
+    "axios": "^1.6.2",
+    "bcryptjs": "^2.4.3",
+    "chrono-node": "^2.7.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "@libsql/client": "^0.4.0",
-    "@anthropic-ai/sdk": "^0.20.0",
-    "openai": "^4.20.0",
-    "@pinecone-database/pinecone": "^2.0.0",
-    "@langchain/core": "^0.1.0",
-    "@langchain/anthropic": "^0.1.0",
-    "@langchain/openai": "^0.0.14",
-    "@langchain/community": "^0.0.20",
-    "langchain": "^0.1.0",
-    "socket.io": "^4.6.1",
-    "multer": "^1.4.5-lts.1",
-    "sharp": "^0.32.6",
+    "express": "^4.18.2",
+    "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
-    "nodemailer": "^6.9.7",
-    "axios": "^1.6.2",
+    "langchain": "^0.1.0",
+    "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
-    "chrono-node": "^2.7.0"
+    "nodemailer": "^6.9.7",
+    "openai": "^4.20.0",
+    "sharp": "^0.32.6",
+    "socket.io": "^4.6.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
   }
 }
-

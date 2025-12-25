@@ -1,10 +1,6 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    }
-  ],
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
   "headers": [
     {
       "source": "/(.*)",

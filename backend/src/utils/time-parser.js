@@ -1,4 +1,4 @@
-import chrono from 'chrono-node';
+import * as chrono from 'chrono-node';
 
 export function parseTimeExpression(text) {
   const results = chrono.parse(text, new Date());

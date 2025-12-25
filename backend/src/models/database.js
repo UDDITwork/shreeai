@@ -184,6 +184,63 @@ export async function initializeDatabase() {
     )
   `);
 
+  // Create summaries table for 12-hour briefings
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS summaries (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      period_start DATETIME NOT NULL,
+      period_end DATETIME NOT NULL,
+      summary_text TEXT,
+      data TEXT,
+      sent_via TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Create research_data table for storing extracted startup/company info
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS research_data (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      search_id TEXT,
+      entity_type TEXT,
+      entity_name TEXT,
+      data TEXT,
+      source_url TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (search_id) REFERENCES searches(id)
+    )
+  `);
+
+  // Create linkedin_credentials table
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS linkedin_credentials (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL UNIQUE,
+      access_token TEXT NOT NULL,
+      person_urn TEXT NOT NULL,
+      profile_name TEXT,
+      expires_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Create linkedin_posts table
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS linkedin_posts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      content TEXT,
+      post_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
   console.log('All tables created/verified');
 }
 
