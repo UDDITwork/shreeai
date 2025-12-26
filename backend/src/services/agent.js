@@ -1007,7 +1007,8 @@ async function executeSendEmail(userId, args) {
   const { to, subject, body } = args;
 
   try {
-    const result = await sendEmail(to, subject, body);
+    // Gmail service expects an object, not separate arguments
+    const result = await sendEmail({ to, subject, body });
 
     if (result.success) {
       // Log the email
@@ -1029,7 +1030,8 @@ async function executeReadEmails(_userId, args) {
   const { count = 5 } = args;
 
   try {
-    const result = await listEmails(count);
+    // listEmails expects an options object
+    const result = await listEmails({ maxResults: count });
 
     if (result.success) {
       return {
