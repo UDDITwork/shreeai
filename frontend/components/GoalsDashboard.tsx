@@ -26,78 +26,53 @@ interface DailyHabit {
   streak_count: number
 }
 
+interface IncomeSummary {
+  total_earned: number
+  best_hourly_rate: number
+  top_source: string
+}
+
 export default function GoalsDashboard({ onClose }: { onClose: () => void }) {
   const [goals, setGoals] = useState<Goal[]>([])
   const [dailyHabits, setDailyHabits] = useState<DailyHabit[]>([])
+  const [incomeSummary, setIncomeSummary] = useState<IncomeSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'all' | 'habits' | 'income'>('all')
-  const [showAddGoal, setShowAddGoal] = useState(false)
-
-  const [newGoal, setNewGoal] = useState({
-    title: '',
-    description: '',
-    goal_type: 'short_term',
-    target_value: 0,
-    unit: '',
-    target_date: '',
-    frequency: 'once'
-  })
 
   useEffect(() => {
-    loadGoals()
-    loadDailyHabits()
+    loadData()
   }, [])
 
-  const loadGoals = async () => {
+  const loadData = async () => {
     try {
-      const response = await api.get('/goals')
-      setGoals(response.data.goals || [])
+      const [goalsRes, habitsRes, incomeRes] = await Promise.all([
+        api.get('/goals'),
+        api.get('/goals/daily-habits'),
+        api.get('/profile/income-sources')
+      ])
+
+      setGoals(goalsRes.data.goals || [])
+      setDailyHabits(habitsRes.data.habits || [])
+
+      if (incomeRes.data.sources?.length > 0) {
+        const sources = incomeRes.data.sources
+        setIncomeSummary({
+          total_earned: sources.reduce((sum: number, s: { total_earned: number }) => sum + (s.total_earned || 0), 0),
+          best_hourly_rate: Math.max(...sources.map((s: { hourly_rate: number }) => s.hourly_rate || 0)),
+          top_source: sources[0]?.source_name || 'None'
+        })
+      }
     } catch (error) {
-      console.error('Failed to load goals:', error)
+      console.error('Failed to load data:', error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadDailyHabits = async () => {
-    try {
-      const response = await api.get('/goals/daily-habits')
-      setDailyHabits(response.data.habits || [])
-    } catch (error) {
-      console.error('Failed to load daily habits:', error)
-    }
-  }
-
-  const addGoal = async () => {
-    if (!newGoal.title) {
-      alert('Please enter a goal title')
-      return
-    }
-
-    try {
-      await api.post('/goals', newGoal)
-      loadGoals()
-      setShowAddGoal(false)
-      setNewGoal({
-        title: '',
-        description: '',
-        goal_type: 'short_term',
-        target_value: 0,
-        unit: '',
-        target_date: '',
-        frequency: 'once'
-      })
-    } catch (error) {
-      console.error('Failed to add goal:', error)
-      alert('Failed to add goal')
     }
   }
 
   const logProgress = async (goalId: string, value: number) => {
     try {
       await api.post(`/goals/${goalId}/progress`, { value })
-      loadGoals()
-      loadDailyHabits()
+      loadData()
     } catch (error) {
       console.error('Failed to log progress:', error)
     }
@@ -146,8 +121,8 @@ export default function GoalsDashboard({ onClose }: { onClose: () => void }) {
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Goals & Habits</h2>
-              <p className="text-green-100 text-sm">Track your progress and build streaks</p>
+              <h2 className="text-2xl font-bold">Goals & Progress</h2>
+              <p className="text-green-100 text-sm">Auto-tracked from your conversations</p>
             </div>
             <button
               onClick={onClose}
@@ -177,6 +152,14 @@ export default function GoalsDashboard({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        {/* AI Learning Notice */}
+        <div className="bg-blue-50 border-b border-blue-100 px-6 py-3">
+          <div className="flex items-center space-x-2 text-blue-700 text-sm">
+            <span>🤖</span>
+            <span>Goals are automatically captured when you mention them in chat. Just talk naturally!</span>
+          </div>
+        </div>
+
         {/* Daily Habits Quick View */}
         {activeTab === 'habits' && dailyHabits.length > 0 && (
           <div className="p-4 bg-green-50 border-b">
@@ -202,98 +185,43 @@ export default function GoalsDashboard({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Add Goal Button */}
-          {!showAddGoal && (
-            <button
-              onClick={() => setShowAddGoal(true)}
-              className="w-full mb-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors"
-            >
-              + Add New Goal
-            </button>
-          )}
-
-          {/* Add Goal Form */}
-          {showAddGoal && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-              <h3 className="font-medium text-gray-800 mb-4">Add New Goal</h3>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={newGoal.title}
-                  onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
-                  placeholder="Goal title"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-                <textarea
-                  value={newGoal.description}
-                  onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
-                  placeholder="Description (optional)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  rows={2}
-                />
-                <div className="grid grid-cols-2 gap-3">
-                  <select
-                    value={newGoal.goal_type}
-                    onChange={(e) => setNewGoal({ ...newGoal, goal_type: e.target.value })}
-                    className="px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="short_term">Short-term Goal</option>
-                    <option value="long_term">Long-term Goal</option>
-                    <option value="daily_habit">Daily Habit</option>
-                    <option value="weekly_habit">Weekly Habit</option>
-                    <option value="income_goal">Income Goal</option>
-                    <option value="savings_goal">Savings Goal</option>
-                    <option value="learning_goal">Learning Goal</option>
-                  </select>
-                  <input
-                    type="date"
-                    value={newGoal.target_date}
-                    onChange={(e) => setNewGoal({ ...newGoal, target_date: e.target.value })}
-                    className="px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="number"
-                    value={newGoal.target_value || ''}
-                    onChange={(e) => setNewGoal({ ...newGoal, target_value: parseInt(e.target.value) || 0 })}
-                    placeholder="Target value (e.g., 100000)"
-                    className="px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                  <input
-                    type="text"
-                    value={newGoal.unit}
-                    onChange={(e) => setNewGoal({ ...newGoal, unit: e.target.value })}
-                    placeholder="Unit (e.g., INR, hours)"
-                    className="px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => setShowAddGoal(false)}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={addGoal}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    Add Goal
-                  </button>
-                </div>
+        {/* Income Summary for Income Tab */}
+        {activeTab === 'income' && incomeSummary && (
+          <div className="p-4 bg-yellow-50 border-b">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold text-yellow-700">₹{incomeSummary.total_earned.toLocaleString()}</p>
+                <p className="text-xs text-yellow-600">Total Earned</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-yellow-700">₹{incomeSummary.best_hourly_rate}/hr</p>
+                <p className="text-xs text-yellow-600">Best Rate</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-yellow-700">{incomeSummary.top_source}</p>
+                <p className="text-xs text-yellow-600">Top Source</p>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
           {/* Goals List */}
           <div className="space-y-4">
             {filteredGoals.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-4xl mb-4">🎯</p>
-                <p>No goals yet. Add your first goal to get started!</p>
+                <p className="font-medium mb-2">No goals tracked yet</p>
+                <p className="text-sm text-gray-400">
+                  Just tell Shree AI things like:
+                </p>
+                <div className="mt-4 space-y-2 text-sm text-gray-500">
+                  <p>"I want to earn 1 lakh this month"</p>
+                  <p>"My goal is to exercise daily"</p>
+                  <p>"I'm planning to learn Python"</p>
+                </div>
+                <p className="mt-4 text-xs text-gray-400">Goals will automatically appear here!</p>
               </div>
             ) : (
               filteredGoals.map((goal) => (
@@ -321,7 +249,7 @@ export default function GoalsDashboard({ onClose }: { onClose: () => void }) {
                         <div className="mt-3">
                           <div className="flex justify-between text-sm text-gray-500 mb-1">
                             <span>
-                              {goal.current_value} / {goal.target_value} {goal.unit}
+                              {goal.current_value.toLocaleString()} / {goal.target_value.toLocaleString()} {goal.unit}
                             </span>
                             <span>{getProgressPercent(goal)}%</span>
                           </div>
@@ -352,17 +280,15 @@ export default function GoalsDashboard({ onClose }: { onClose: () => void }) {
                           ✓ Done
                         </button>
                       ) : (
-                        <>
-                          <button
-                            onClick={() => {
-                              const value = prompt('Enter progress value:')
-                              if (value) logProgress(goal.id, parseInt(value))
-                            }}
-                            className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200"
-                          >
-                            + Add
-                          </button>
-                        </>
+                        <button
+                          onClick={() => {
+                            const value = prompt('Enter progress value:')
+                            if (value) logProgress(goal.id, parseInt(value))
+                          }}
+                          className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200"
+                        >
+                          + Update
+                        </button>
                       )}
                     </div>
                   </div>
@@ -377,7 +303,7 @@ export default function GoalsDashboard({ onClose }: { onClose: () => void }) {
           <div className="flex justify-around text-center">
             <div>
               <p className="text-2xl font-bold text-gray-800">{goals.length}</p>
-              <p className="text-xs text-gray-500">Total Goals</p>
+              <p className="text-xs text-gray-500">Goals Tracked</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-green-600">

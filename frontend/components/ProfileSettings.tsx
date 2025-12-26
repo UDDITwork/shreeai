@@ -155,7 +155,7 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Profile Settings</h2>
-              <p className="text-blue-100 text-sm">Personalize your Shree AI experience</p>
+              <p className="text-blue-100 text-sm">Mostly learned from conversations - edit only if needed</p>
             </div>
             <button
               onClick={onClose}
@@ -182,6 +182,14 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* AI Learning Notice */}
+        <div className="bg-blue-50 border-b border-blue-100 px-6 py-3">
+          <div className="flex items-center space-x-2 text-blue-700 text-sm">
+            <span>🤖</span>
+            <span>Your profile is automatically learned from conversations. Manual edits override AI learning.</span>
           </div>
         </div>
 
