@@ -5,16 +5,29 @@ interface Message {
   message: string
   response?: string
   role: 'user' | 'assistant'
-  timestamp: string
+  timestamp?: string
+  created_at?: string
 }
 
 interface MessageBubbleProps {
   message: Message
 }
 
+function formatTime(dateStr?: string): string {
+  if (!dateStr) return ''
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return ''
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return ''
+  }
+}
+
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user'
   const content = message.response || message.message
+  const timeStr = formatTime(message.timestamp || message.created_at)
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -41,11 +54,13 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           }`}>
             {content}
           </p>
-          <p className={`text-xs mt-2 ${
-            isUser ? 'text-blue-100' : 'text-gray-400'
-          }`}>
-            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </p>
+          {timeStr && (
+            <p className={`text-xs mt-2 ${
+              isUser ? 'text-blue-100' : 'text-gray-400'
+            }`}>
+              {timeStr}
+            </p>
+          )}
         </div>
       </div>
     </div>

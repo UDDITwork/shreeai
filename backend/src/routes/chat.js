@@ -78,7 +78,7 @@ router.get('/history', authenticateToken, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
 
     const result = await client.execute({
-      sql: 'SELECT id, message, response, role, created_at FROM conversations WHERE user_id = ? ORDER BY created_at DESC LIMIT ?',
+      sql: 'SELECT id, message, response, role, created_at FROM conversations WHERE user_id = ? ORDER BY created_at ASC LIMIT ?',
       args: [userId, limit]
     });
 

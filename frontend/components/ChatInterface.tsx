@@ -15,7 +15,8 @@ interface Message {
   message: string
   response?: string
   role: 'user' | 'assistant'
-  timestamp: string
+  timestamp?: string
+  created_at?: string
 }
 
 export default function ChatInterface() {
