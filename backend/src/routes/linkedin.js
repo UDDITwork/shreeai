@@ -22,25 +22,42 @@ const router = express.Router();
 // Store pending OAuth states (in production, use Redis or database)
 const pendingStates = new Map();
 
-// Step 1: Get authorization URL to connect LinkedIn
-router.get('/auth', authenticateToken, (req, res) => {
+// Step 1: Get authorization URL to connect LinkedIn - REDIRECTS DIRECTLY
+// Supports both header auth and query param token (for popup flow)
+router.get('/auth', async (req, res) => {
   try {
+    // Try to get user from token in query param (popup flow) or header
+    let userId;
+    const queryToken = req.query.token;
+    const headerToken = req.headers.authorization?.split(' ')[1];
+    const token = queryToken || headerToken;
+
+    if (!token) {
+      return res.status(401).send('Authentication required. Please login first.');
+    }
+
+    // Verify token
+    const jwt = await import('jsonwebtoken');
+    try {
+      const decoded = jwt.default.verify(token, process.env.JWT_SECRET);
+      userId = decoded.userId;
+    } catch (err) {
+      return res.status(401).send('Invalid or expired token. Please login again.');
+    }
+
     const { authUrl, state } = getAuthorizationUrl();
 
     // Store state with user ID for verification
     pendingStates.set(state, {
-      userId: req.user.userId,
+      userId: userId,
       timestamp: Date.now()
     });
 
-    res.json({
-      success: true,
-      authUrl,
-      message: 'Open this URL to authorize LinkedIn access'
-    });
+    // Redirect directly to LinkedIn authorization
+    res.redirect(authUrl);
   } catch (error) {
     console.error('LinkedIn auth URL error:', error);
-    res.status(500).json({ error: 'Failed to generate auth URL' });
+    res.status(500).send('Failed to start LinkedIn authorization');
   }
 });
 

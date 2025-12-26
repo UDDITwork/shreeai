@@ -46,12 +46,31 @@ export const LinkedInVisibility = {
   CONNECTIONS: 'CONNECTIONS'  // Only connections
 };
 
+// Get the correct redirect URI based on environment
+function getRedirectUri() {
+  // If explicitly set, use that
+  if (process.env.LINKEDIN_REDIRECT_URI) {
+    return process.env.LINKEDIN_REDIRECT_URI;
+  }
+
+  // Auto-detect based on environment
+  if (process.env.NODE_ENV === 'production') {
+    // Cloud Run backend URL
+    return 'https://shreeeai-282996737766.asia-south1.run.app/api/linkedin/callback';
+  }
+
+  // Default for local development
+  return 'http://localhost:3001/api/linkedin/callback';
+}
+
 // Get authorization URL for user to grant access
 export function getAuthorizationUrl() {
   const clientId = process.env.LINKEDIN_CLIENT_ID;
-  const redirectUri = process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:3001/api/linkedin/callback';
+  const redirectUri = getRedirectUri();
   const scope = 'openid profile w_member_social';
   const state = Math.random().toString(36).substring(7);
+
+  console.log('📌 LinkedIn OAuth using redirect URI:', redirectUri);
 
   const authUrl = `${LINKEDIN_AUTH_URL}/authorization?` +
     `response_type=code&` +
@@ -66,6 +85,7 @@ export function getAuthorizationUrl() {
 // Exchange authorization code for access token
 export async function getAccessToken(code) {
   try {
+    const redirectUri = getRedirectUri();
     const response = await axios.post(
       `${LINKEDIN_AUTH_URL}/accessToken`,
       new URLSearchParams({
@@ -73,7 +93,7 @@ export async function getAccessToken(code) {
         code,
         client_id: process.env.LINKEDIN_CLIENT_ID,
         client_secret: process.env.LINKEDIN_CLIENT_SECRET,
-        redirect_uri: process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:3001/api/linkedin/callback'
+        redirect_uri: redirectUri
       }),
       {
         headers: {

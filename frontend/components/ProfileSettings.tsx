@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react'
 import api from '@/lib/api'
 
+interface LinkedInStatus {
+  connected: boolean
+  profileName?: string
+  expired?: boolean
+}
+
 interface UserProfile {
   name: string
   preferred_name: string
@@ -67,9 +73,13 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
     days_of_week: 'mon,tue,wed,thu,fri'
   })
 
+  const [linkedInStatus, setLinkedInStatus] = useState<LinkedInStatus>({ connected: false })
+  const [connectingLinkedIn, setConnectingLinkedIn] = useState(false)
+
   useEffect(() => {
     loadProfile()
     loadTimeBlocks()
+    loadLinkedInStatus()
   }, [])
 
   const loadProfile = async () => {
@@ -91,6 +101,52 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
       setTimeBlocks(response.data.blocks || [])
     } catch (error) {
       console.error('Failed to load time blocks:', error)
+    }
+  }
+
+  const loadLinkedInStatus = async () => {
+    try {
+      const response = await api.get('/linkedin/status')
+      setLinkedInStatus(response.data)
+    } catch (error) {
+      console.error('Failed to load LinkedIn status:', error)
+    }
+  }
+
+  const connectLinkedIn = async () => {
+    setConnectingLinkedIn(true)
+    try {
+      // Get the token and open auth URL in new window
+      const token = localStorage.getItem('token')
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+
+      // Open LinkedIn auth in a popup window with token in URL
+      const authWindow = window.open(
+        `${apiUrl}/linkedin/auth?token=${token}`,
+        'linkedin-auth',
+        'width=600,height=700,scrollbars=yes'
+      )
+
+      // Poll for window close
+      const checkClosed = setInterval(() => {
+        if (authWindow?.closed) {
+          clearInterval(checkClosed)
+          setConnectingLinkedIn(false)
+          loadLinkedInStatus()
+        }
+      }, 1000)
+    } catch (error) {
+      console.error('Failed to connect LinkedIn:', error)
+      setConnectingLinkedIn(false)
+    }
+  }
+
+  const disconnectLinkedIn = async () => {
+    try {
+      await api.delete('/linkedin/disconnect')
+      setLinkedInStatus({ connected: false })
+    } catch (error) {
+      console.error('Failed to disconnect LinkedIn:', error)
     }
   }
 
@@ -380,6 +436,43 @@ export default function ProfileSettings({ onClose }: { onClose: () => void }) {
 
           {activeTab === 'preferences' && (
             <div className="space-y-4">
+              {/* LinkedIn Connection */}
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-sky-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-[#0077B5] rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-800">LinkedIn</h4>
+                      {linkedInStatus.connected ? (
+                        <p className="text-sm text-green-600">Connected as {linkedInStatus.profileName}</p>
+                      ) : (
+                        <p className="text-sm text-gray-500">Connect to post directly from chat</p>
+                      )}
+                    </div>
+                  </div>
+                  {linkedInStatus.connected ? (
+                    <button
+                      onClick={disconnectLinkedIn}
+                      className="px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 text-sm"
+                    >
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button
+                      onClick={connectLinkedIn}
+                      disabled={connectingLinkedIn}
+                      className="px-4 py-2 bg-[#0077B5] text-white rounded-lg hover:bg-[#006399] text-sm disabled:opacity-50"
+                    >
+                      {connectingLinkedIn ? 'Connecting...' : 'Connect'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
                   <h4 className="font-medium text-gray-800">Money Focus Mode</h4>
