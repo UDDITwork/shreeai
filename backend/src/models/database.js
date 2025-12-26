@@ -241,7 +241,281 @@ export async function initializeDatabase() {
     )
   `);
 
-  console.log('All tables created/verified');
+  // ============================================
+  // PERSONALIZATION & PROACTIVE ASSISTANT TABLES
+  // ============================================
+
+  // User profiles - comprehensive user preferences and personality
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS user_profiles (
+      id TEXT PRIMARY KEY,
+      user_id TEXT UNIQUE NOT NULL,
+      name TEXT,
+      preferred_name TEXT,
+      timezone TEXT DEFAULT 'Asia/Kolkata',
+      wake_time TEXT DEFAULT '07:00',
+      sleep_time TEXT DEFAULT '23:00',
+      work_start_time TEXT DEFAULT '09:00',
+      work_end_time TEXT DEFAULT '18:00',
+      communication_style TEXT DEFAULT 'friendly',
+      interests TEXT,
+      short_term_goals TEXT,
+      long_term_goals TEXT,
+      daily_habits TEXT,
+      important_dates TEXT,
+      health_preferences TEXT,
+      work_schedule TEXT,
+      personality_notes TEXT,
+      financial_goal TEXT,
+      proactive_enabled INTEGER DEFAULT 1,
+      wellbeing_enabled INTEGER DEFAULT 1,
+      morning_briefing_enabled INTEGER DEFAULT 1,
+      evening_summary_enabled INTEGER DEFAULT 1,
+      money_focus_mode INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // User contacts - relationships the AI should know about
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS user_contacts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      relationship TEXT,
+      phone TEXT,
+      email TEXT,
+      whatsapp_id TEXT,
+      birthday TEXT,
+      notes TEXT,
+      last_interaction DATETIME,
+      communication_frequency TEXT,
+      importance INTEGER DEFAULT 3,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Life events - calendar, deadlines, birthdays, etc.
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS life_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      start_time DATETIME,
+      end_time DATETIME,
+      all_day INTEGER DEFAULT 0,
+      location TEXT,
+      participants TEXT,
+      importance INTEGER DEFAULT 3,
+      recurring TEXT,
+      reminder_before INTEGER DEFAULT 30,
+      source TEXT DEFAULT 'manual',
+      external_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // User goals - short-term, long-term, daily habits with tracking
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS user_goals (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      goal_type TEXT NOT NULL,
+      target_value INTEGER,
+      current_value INTEGER DEFAULT 0,
+      unit TEXT,
+      target_date DATE,
+      frequency TEXT,
+      priority INTEGER DEFAULT 3,
+      parent_goal_id TEXT,
+      linked_income_source TEXT,
+      expected_roi TEXT,
+      status TEXT DEFAULT 'active',
+      streak_count INTEGER DEFAULT 0,
+      best_streak INTEGER DEFAULT 0,
+      last_progress_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (parent_goal_id) REFERENCES user_goals(id)
+    )
+  `);
+
+  // Goal progress tracking
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS goal_progress (
+      id TEXT PRIMARY KEY,
+      goal_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      progress_value INTEGER,
+      notes TEXT,
+      logged_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (goal_id) REFERENCES user_goals(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Income sources learned from conversations
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS income_sources (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      source_name TEXT NOT NULL,
+      source_type TEXT,
+      income_type TEXT,
+      average_amount INTEGER,
+      currency TEXT DEFAULT 'INR',
+      time_investment_hours REAL,
+      hourly_rate REAL,
+      last_earned DATETIME,
+      total_earned INTEGER DEFAULT 0,
+      occurrence_count INTEGER DEFAULT 1,
+      priority_score INTEGER DEFAULT 50,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Protected time blocks - study, deep work, etc.
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS protected_time_blocks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      block_name TEXT NOT NULL,
+      purpose TEXT,
+      start_time TEXT NOT NULL,
+      end_time TEXT NOT NULL,
+      days_of_week TEXT,
+      is_active INTEGER DEFAULT 1,
+      priority INTEGER DEFAULT 100,
+      expected_roi TEXT,
+      interruption_count INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Time savings log - track optimization wins
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS time_savings_log (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      action_type TEXT NOT NULL,
+      description TEXT,
+      time_saved_minutes INTEGER NOT NULL,
+      suggestion_source TEXT,
+      logged_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Behavior patterns - AI learning about user habits
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS behavior_patterns (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      pattern_type TEXT NOT NULL,
+      pattern_data TEXT NOT NULL,
+      confidence REAL DEFAULT 0.5,
+      occurrences INTEGER DEFAULT 1,
+      last_observed DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Wellbeing logs - mood, sleep, exercise tracking
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS wellbeing_logs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      log_type TEXT NOT NULL,
+      value TEXT,
+      numeric_value REAL,
+      notes TEXT,
+      logged_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Proactive messages sent - to avoid duplicates and track acknowledgments
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS proactive_messages (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      message_type TEXT NOT NULL,
+      content TEXT,
+      trigger_reason TEXT,
+      priority INTEGER DEFAULT 50,
+      channel TEXT DEFAULT 'websocket',
+      acknowledged INTEGER DEFAULT 0,
+      action_taken TEXT,
+      sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      acknowledged_at DATETIME,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Task priorities - calculated priority scores for tasks
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS task_priorities (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      task_id TEXT,
+      goal_id TEXT,
+      reminder_id TEXT,
+      title TEXT NOT NULL,
+      task_type TEXT,
+      priority_score INTEGER DEFAULT 50,
+      money_impact INTEGER DEFAULT 0,
+      time_required_minutes INTEGER,
+      deadline DATETIME,
+      is_during_protected_time INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'pending',
+      completed_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Daily productivity metrics
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS daily_metrics (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      date DATE NOT NULL,
+      productive_hours REAL DEFAULT 0,
+      study_hours REAL DEFAULT 0,
+      money_earned INTEGER DEFAULT 0,
+      tasks_completed INTEGER DEFAULT 0,
+      goals_progressed INTEGER DEFAULT 0,
+      time_saved_minutes INTEGER DEFAULT 0,
+      focus_score INTEGER DEFAULT 0,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      UNIQUE(user_id, date)
+    )
+  `);
+
+  console.log('All tables created/verified (including personalization & productivity tables)');
 }
 
 export { client };

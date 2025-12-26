@@ -14,9 +14,14 @@ import summaryRoutes from './routes/summary.js';
 import linkedinRoutes from './routes/linkedin.js';
 import sheetsRoutes from './routes/sheets.js';
 import googleAuthRoutes from './routes/google-auth.js';
+// Personalization & Productivity routes
+import profileRoutes from './routes/profile.js';
+import goalsRoutes from './routes/goals.js';
+import wellbeingRoutes from './routes/wellbeing.js';
 import { initializeDatabase } from './models/database.js';
 import { setupReminderScheduler } from './services/reminder.js';
 import { initializeSummaryScheduler } from './services/summary-generator.js';
+import { initializeProactiveEngine } from './services/proactive-engine.js';
 
 dotenv.config();
 
@@ -52,6 +57,10 @@ app.use('/api/summary', summaryRoutes);
 app.use('/api/linkedin', linkedinRoutes);
 app.use('/api/sheets', sheetsRoutes);
 app.use('/api/google', googleAuthRoutes);
+// Personalization & Productivity routes
+app.use('/api/profile', profileRoutes);
+app.use('/api/goals', goalsRoutes);
+app.use('/api/wellbeing', wellbeingRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -80,7 +89,11 @@ async function startServer() {
     // Setup 12-hour summary scheduler
     initializeSummaryScheduler(io);
     console.log('Summary scheduler initialized');
-    
+
+    // Setup proactive assistant engine (briefings, wellbeing, goals)
+    initializeProactiveEngine(io);
+    console.log('Proactive engine initialized');
+
     const PORT = process.env.PORT || 3001;
     const HOST = '0.0.0.0'; // Required for Cloud Run
     httpServer.listen(PORT, HOST, () => {

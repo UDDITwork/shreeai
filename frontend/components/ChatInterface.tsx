@@ -6,6 +6,9 @@ import { useAuthStore } from '@/lib/store'
 import api from '@/lib/api'
 import MessageBubble from './MessageBubble'
 import ImageUpload from './ImageUpload'
+import ProfileSettings from './ProfileSettings'
+import GoalsDashboard from './GoalsDashboard'
+import WellbeingDashboard from './WellbeingDashboard'
 
 interface Message {
   id: string
@@ -19,6 +22,9 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
+  const [showGoals, setShowGoals] = useState(false)
+  const [showWellbeing, setShowWellbeing] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const socket = getSocket()
   const { user, clearAuth } = useAuthStore()
@@ -122,6 +128,31 @@ export default function ChatInterface() {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Quick Access Buttons */}
+              <div className="hidden md:flex items-center space-x-2">
+                <button
+                  onClick={() => setShowGoals(true)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Goals & Habits"
+                >
+                  <span className="text-lg">🎯</span>
+                </button>
+                <button
+                  onClick={() => setShowWellbeing(true)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Wellbeing"
+                >
+                  <span className="text-lg">💚</span>
+                </button>
+                <button
+                  onClick={() => setShowProfile(true)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Profile Settings"
+                >
+                  <span className="text-lg">⚙️</span>
+                </button>
+              </div>
+
               {/* Status Indicator */}
               <div className="hidden sm:flex items-center space-x-2 bg-white/10 px-3 py-1.5 rounded-full">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -156,7 +187,7 @@ export default function ChatInterface() {
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 py-2 px-4 overflow-x-auto">
         <div className="max-w-6xl mx-auto flex items-center space-x-2">
           <span className="text-xs text-gray-500 mr-2 whitespace-nowrap">Capabilities:</span>
-          {['LinkedIn Posts', 'Google Sheets', 'Web Search', 'Image Gen', 'Email', 'Reminders'].map((feature) => (
+          {['Goals', 'Wellbeing', 'Productivity', 'LinkedIn', 'Sheets', 'Search', 'Email'].map((feature) => (
             <span key={feature} className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full whitespace-nowrap border border-blue-100">
               {feature}
             </span>
@@ -260,6 +291,11 @@ export default function ChatInterface() {
           </p>
         </div>
       </div>
+
+      {/* Modal Dashboards */}
+      {showProfile && <ProfileSettings onClose={() => setShowProfile(false)} />}
+      {showGoals && <GoalsDashboard onClose={() => setShowGoals(false)} />}
+      {showWellbeing && <WellbeingDashboard onClose={() => setShowWellbeing(false)} />}
     </div>
   )
 }
